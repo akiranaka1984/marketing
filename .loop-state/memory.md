@@ -3,8 +3,8 @@
 > ループは会話を忘れる。このファイルは忘れない。各runの最初に読み、最後に更新する。
 
 ## 現在のフェーズ
-Phase 1完了 → スタック雛形 → #2 ServiceProfile土台 → #5 DoctrineRouter v1 + BoringFilter完了
-→ 次は #6 Meta ChannelAdapter+Closed Loop / #4 管理画面 / #2 実AI Profiler(Agent SDK, APIキー後)
+Phase 1 → 雛形 → #2土台 → #5 Router+BoringFilter → #6 Closed Loop(縦切り)完了
+→ 次は #4 管理画面+暗号化認証情報ストア / #2 実AI Profiler(Agent SDK, APIキー後)
 
 ## 技術メモ（重要）
 - Next.js 16.2.9 / React 19.2.4 / pnpm。**Next16は破壊的変更あり**→ Next固有コードは
@@ -32,6 +32,12 @@ Phase 1完了 → スタック雛形 → #2 ServiceProfile土台 → #5 Doctrine
 - ServiceProfile.constraints を型付け: {kind: risk|budget|legal|brand|ops|other, note}
 - gate全green(42件)。Codex(gpt-5.5)レビューでHIGH2件指摘→両方修正→LGTM確認済
 - Codex注意: ChatGPTアカウントは gpt-5/gpt-5-codex不可。--model gpt-5.5 を使う
+- #6 Closed Loop縦切り(src/core/channel/, src/core/loop/): route→BoringFilter→人間承認
+  →ChannelAdapter publish→metrics→D6 dual-score。サービス固有コードゼロで閉じる
+- ChannelAdapter port + MetaAdapter(dry-run, 認証情報注入・無ければ自動simulated, live未実装はthrow)
+- D6 dual-score: 短期=ROAS/CAC/CVR, 長期=ユニークreach(浸透。impressionsは使わない/頻度で水増し回避)。
+  両方0.8以上のみscale。reach不明はscale不可。rejected publishはmetrics取得せず非scored
+- gate全green(61件)。Codexレビュー: HIGH(impressions→reach), MEDIUM(rejected publish)指摘→修正→LGTM
 
 ## 確定した方針（2026-06-15）
 - 汎用・マルチテナント・設定駆動で最初から作る（特定サービスへのハードコード禁止）
