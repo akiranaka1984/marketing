@@ -1,5 +1,5 @@
 /**
- * Decorative hero backdrop: drifting acid-lime + teal blooms over a faint
+ * Decorative hero backdrop: drifting cyan + teal blooms over a faint
  * blueprint grid. Purely visual — sits behind content, ignores pointer events.
  */
 export function Backdrop() {

@@ -20,11 +20,11 @@
   --color-subtle: #aab0bd;
   --color-faint: #7f8694;
 
-  /* Accent — acid lime, the single sharp note. */
-  --color-accent: #c8f135;
-  --color-accent-hover: #d6fb52;
-  --color-accent-ink: #0a0c08;
-  --color-accent-soft: #1b2410;
+  /* Accent — electric cyan, the single sharp note. */
+  --color-accent: #2de2e6;
+  --color-accent-hover: #5cf0f3;
+  --color-accent-ink: #04100f;
+  --color-accent-soft: #08221f;
 
   /* Secondary glow note for gradient meshes. */
   --color-glow: #4be3c0;
@@ -142,7 +142,7 @@ body::after {
 
 /* ----- Composable utilities ----- */
 
-/* Gradient mesh backdrop — soft acid-lime + teal blooms over deep canvas. */
+/* Gradient mesh backdrop — soft cyan + teal blooms over deep canvas. */
 @utility mesh {
   background-color: var(--color-canvas);
   background-image:
@@ -168,14 +168,14 @@ body::after {
   border: 1px solid var(--color-line);
 }
 
-/* Lime glow shadow for hero CTAs. */
+/* Cyan glow shadow for hero CTAs. */
 @utility glow-accent {
   box-shadow:
     0 0 0 1px color-mix(in oklab, var(--color-accent) 40%, transparent),
     0 12px 40px -12px color-mix(in oklab, var(--color-accent) 55%, transparent);
 }
 
-/* Animated lime → ink gradient text for display headlines. */
+/* Animated cyan → ink gradient text for display headlines. */
 @utility text-gradient {
   /* Fallback for environments without background-clip:text (overridden below). */
   color: var(--color-accent);
