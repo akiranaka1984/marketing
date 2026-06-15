@@ -7,7 +7,7 @@ const INITIAL: LoginState = { ok: false, message: "" };
 
 const FIELD =
   "w-full rounded-lg border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-ink " +
-  "placeholder:text-faint transition-colors focus:border-accent";
+  "placeholder:text-faint transition-colors hover:border-line-strong focus:border-accent";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(loginAction, INITIAL);
