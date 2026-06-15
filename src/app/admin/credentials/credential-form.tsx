@@ -6,8 +6,10 @@ import { saveCredentialAction, type SaveState } from "./actions";
 
 const initial: SaveState = { ok: false, message: "" };
 
-const field = "w-full rounded border border-black/15 bg-white px-3 py-2 text-sm";
-const label = "block text-xs font-medium text-black/60";
+const field =
+  "w-full rounded-lg border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-ink " +
+  "placeholder:text-faint transition-colors focus:border-accent";
+const label = "block text-xs font-medium text-subtle";
 
 export function CredentialForm() {
   const [state, action, pending] = useActionState(saveCredentialAction, initial);
@@ -47,16 +49,23 @@ export function CredentialForm() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={pending}
-          className="rounded bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink
+            transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "保存中…" : "暗号化して保存"}
         </button>
         {state.message ? (
-          <span className={`text-sm ${state.ok ? "text-green-600" : "text-red-600"}`}>
+          <span
+            className={`rounded-md px-2.5 py-1 text-sm ${
+              state.ok
+                ? "bg-success/10 text-success"
+                : "border border-danger/30 bg-danger-surface text-danger"
+            }`}
+          >
             {state.message}
           </span>
         ) : null}
