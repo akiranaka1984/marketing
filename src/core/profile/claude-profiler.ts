@@ -10,6 +10,7 @@
 
 import { z } from "zod";
 import type { LlmClient } from "./llm-client";
+import { parseJsonObject } from "./llm-json";
 import type { Profiler, ProfileSeed } from "./profiler";
 import { channelSchema, parseServiceProfile, type ServiceProfile } from "./service-profile";
 
@@ -70,7 +71,7 @@ export class ClaudeProfiler implements Profiler {
   async profile(rawSeed: ProfileSeed): Promise<ServiceProfile> {
     const seed = seedSchema.parse(rawSeed);
     const raw = await this.client.complete({ system: SYSTEM, prompt: buildPrompt(seed) });
-    const derived = parseJsonObject(raw);
+    const derived = parseJsonObject(raw, "profiler");
 
     // Profiler owns origin + time; the model's provenance (confidence/sources) is kept.
     const modelProvenance =
@@ -96,26 +97,4 @@ function buildPrompt(seed: ProfileSeed): string {
   if (seed.url) lines.push(`URL to research: ${seed.url}`);
   if (seed.channels?.length) lines.push(`Enabled channels: ${seed.channels.join(", ")}`);
   return lines.join("\n");
-}
-
-/**
- * Parse the model's text into a JSON object. Tolerates surrounding prose or markdown
- * fences by extracting the outermost {...} block. Throws if no JSON object is found.
- */
-function parseJsonObject(text: string): Record<string, unknown> {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start === -1 || end <= start) {
-    throw new Error("profiler: model response contained no JSON object");
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text.slice(start, end + 1));
-  } catch {
-    throw new Error("profiler: model response was not valid JSON");
-  }
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new Error("profiler: model response was not a JSON object");
-  }
-  return parsed as Record<string, unknown>;
 }

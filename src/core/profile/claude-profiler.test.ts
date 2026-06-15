@@ -3,6 +3,8 @@ import { ClaudeProfiler } from "./claude-profiler";
 import type { LlmClient, LlmCompletionRequest } from "./llm-client";
 import { isUsableProfile } from "./service-profile";
 
+const KEY = Buffer.alloc(32, 7);
+
 class FakeLlmClient implements LlmClient {
   lastRequest?: LlmCompletionRequest;
   constructor(private readonly response: string) {}
@@ -55,7 +57,7 @@ describe("ClaudeProfiler", () => {
     const profile = await profiler.profile(seed);
     // Model claimed confidence 0.8, but the maker sets no verifiedBy (RULES 第3条).
     expect(profile.provenance.verifiedBy).toBeUndefined();
-    expect(isUsableProfile(profile)).toBe(false);
+    expect(isUsableProfile(profile, KEY)).toBe(false);
   });
 
   it("stamps provenance itself, ignoring any derivedBy/verifiedBy the model tries to set", async () => {
@@ -73,7 +75,7 @@ describe("ClaudeProfiler", () => {
     const profile = await profiler.profile(seed);
     expect(profile.provenance.derivedBy).toBe("claude-opus-4");
     expect(profile.provenance.verifiedBy).toBeUndefined();
-    expect(isUsableProfile(profile)).toBe(false);
+    expect(isUsableProfile(profile, KEY)).toBe(false);
   });
 
   it("extracts JSON even when wrapped in prose or markdown fences", async () => {

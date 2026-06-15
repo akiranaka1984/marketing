@@ -7,6 +7,7 @@
  */
 
 import { z } from "zod";
+import { isProfileVerified } from "./verification";
 
 /** Required free-text: rejects empty AND whitespace-only AI output. */
 const nonEmptyText = z.string().trim().min(1);
@@ -108,6 +109,8 @@ export const serviceProfileSchema = z.object({
     /** The checker that independently verified this profile, if any. */
     verifiedBy: nonEmptyText.optional(),
     verifiedAt: z.iso.datetime().optional(),
+    /** HMAC minted by the checker proving verifiedBy/verifiedAt are authentic (see verification.ts). */
+    verificationToken: nonEmptyText.optional(),
   }),
 });
 
@@ -120,16 +123,20 @@ export function parseServiceProfile(input: unknown): ServiceProfile {
 
 /**
  * Whether a planner may consume this profile. A maker (the profiler) must NOT be able
- * to self-certify (RULES 第3条): usability requires an independent checker
- * (`verifiedBy`) plus a confidence at or above the threshold. Model self-reported
- * confidence alone never crosses this gate, since the maker never sets `verifiedBy`.
+ * to self-certify (RULES 第3条): usability requires an independent checker (`verifiedBy`
+ * ≠ `derivedBy`), a confidence at or above the threshold, AND a valid `verificationToken`
+ * — an HMAC only the checker (holder of `key`) can mint. Structural fields alone are
+ * forgeable; the token is what makes a profile loaded from a DB row or API body
+ * trustworthy. Model self-reported confidence never crosses this gate.
  */
-export function isUsableProfile(profile: ServiceProfile): boolean {
-  const { derivedBy, verifiedBy, confidence } = profile.provenance;
+export function isUsableProfile(profile: ServiceProfile, key: Buffer): boolean {
+  const { derivedBy, verifiedBy, verifiedAt, confidence } = profile.provenance;
   return (
     derivedBy !== "mock" &&
     verifiedBy !== undefined &&
     verifiedBy !== derivedBy &&
-    confidence >= MIN_USABLE_CONFIDENCE
+    verifiedAt !== undefined &&
+    confidence >= MIN_USABLE_CONFIDENCE &&
+    isProfileVerified(profile, key)
   );
 }
