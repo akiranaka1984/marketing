@@ -100,15 +100,49 @@ describe("isUsableProfile", () => {
   it("rejects low-confidence profiles", () => {
     const profile = parseServiceProfile({
       ...validProfile(),
-      provenance: { ...validProfile().provenance, derivedBy: "claude", confidence: 0.3 },
+      provenance: {
+        ...validProfile().provenance,
+        derivedBy: "claude",
+        confidence: 0.3,
+        verifiedBy: "checker",
+        verifiedAt: "2026-06-15T00:00:00.000Z",
+      },
     });
     expect(isUsableProfile(profile)).toBe(false);
   });
 
-  it("accepts a confident, non-mock profile", () => {
+  it("rejects an unverified maker-only profile even when confident", () => {
     const profile = parseServiceProfile({
       ...validProfile(),
-      provenance: { ...validProfile().provenance, derivedBy: "claude", confidence: 0.8 },
+      provenance: { ...validProfile().provenance, derivedBy: "claude", confidence: 0.9 },
+    });
+    expect(isUsableProfile(profile)).toBe(false);
+  });
+
+  it("rejects a profile whose checker is the same agent as the maker", () => {
+    const profile = parseServiceProfile({
+      ...validProfile(),
+      provenance: {
+        ...validProfile().provenance,
+        derivedBy: "claude",
+        verifiedBy: "claude",
+        confidence: 0.9,
+        verifiedAt: "2026-06-15T00:00:00.000Z",
+      },
+    });
+    expect(isUsableProfile(profile)).toBe(false);
+  });
+
+  it("accepts a checker-verified, confident, non-mock profile", () => {
+    const profile = parseServiceProfile({
+      ...validProfile(),
+      provenance: {
+        ...validProfile().provenance,
+        derivedBy: "claude",
+        confidence: 0.8,
+        verifiedBy: "checker",
+        verifiedAt: "2026-06-15T00:00:00.000Z",
+      },
     });
     expect(isUsableProfile(profile)).toBe(true);
   });

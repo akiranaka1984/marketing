@@ -97,12 +97,17 @@ export const serviceProfileSchema = z.object({
   constraints: z.array(constraintSchema),
 
   // Provenance — every profile is AI-derived; we keep confidence + sources so the
-  // loop can decide when to re-research or escalate to a human.
+  // loop can decide when to re-research or escalate to a human. derivedBy is the
+  // MAKER; verifiedBy is a separate CHECKER (RULES 第3条: maker ≠ checker). A profile
+  // is only usable once an independent checker has verified it (see isUsableProfile).
   provenance: z.object({
     derivedBy: nonEmptyText,
     confidence: z.number().min(0).max(1),
     sources: z.array(z.string()),
     generatedAt: z.iso.datetime(),
+    /** The checker that independently verified this profile, if any. */
+    verifiedBy: nonEmptyText.optional(),
+    verifiedAt: z.iso.datetime().optional(),
   }),
 });
 
@@ -114,9 +119,17 @@ export function parseServiceProfile(input: unknown): ServiceProfile {
 }
 
 /**
- * Whether a planner may consume this profile. Guards against unverified mock /
- * low-confidence profiles leaking their generic defaults into real strategy.
+ * Whether a planner may consume this profile. A maker (the profiler) must NOT be able
+ * to self-certify (RULES 第3条): usability requires an independent checker
+ * (`verifiedBy`) plus a confidence at or above the threshold. Model self-reported
+ * confidence alone never crosses this gate, since the maker never sets `verifiedBy`.
  */
 export function isUsableProfile(profile: ServiceProfile): boolean {
-  return profile.provenance.derivedBy !== "mock" && profile.provenance.confidence >= MIN_USABLE_CONFIDENCE;
+  const { derivedBy, verifiedBy, confidence } = profile.provenance;
+  return (
+    derivedBy !== "mock" &&
+    verifiedBy !== undefined &&
+    verifiedBy !== derivedBy &&
+    confidence >= MIN_USABLE_CONFIDENCE
+  );
 }
