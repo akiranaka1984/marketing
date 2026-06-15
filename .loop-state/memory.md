@@ -3,7 +3,8 @@
 > ループは会話を忘れる。このファイルは忘れない。各runの最初に読み、最後に更新する。
 
 ## 現在のフェーズ
-Phase 1完了 → スタック雛形完了 → 次は #2 ServiceProfile / #4 管理画面
+Phase 1完了 → スタック雛形完了 → #2 ServiceProfile スキーマ＋Profiler port＋MockProfiler完了
+→ 次は #2 実AI Profiler(Agent SDK, APIキー後) / #5 DoctrineRouter+BoringFilter / #4 管理画面
 
 ## 技術メモ（重要）
 - Next.js 16.2.9 / React 19.2.4 / pnpm。**Next16は破壊的変更あり**→ Next固有コードは
@@ -19,6 +20,11 @@ Phase 1完了 → スタック雛形完了 → 次は #2 ServiceProfile / #4 管
 - ドクトリンエンジン完成：doctrine/ENGINE.md に D1〜D7 の意思決定背骨を蒸留
 - 裁定の既定：対立は競合2案を立て実データで決める（承認済）
 - スタック雛形: Next.js16+vitest+品質ゲート+loop.sh+.env.example、decision-spine実装
+- ServiceProfile確定: src/core/profile/ に Zodスキーマ(service-profile.ts)＋Profiler port(profiler.ts)
+  ＋MockProfiler(mock-profiler.ts) ＋テスト計13件。gate全green(16件)。zod 4.4.3導入
+- ServiceProfileは汎用構造（category/JTBD/market/audience/channels/conversion.isOnline/provenance）
+  ＝AIが後でAgent SDKで自動生成。MockProfilerはAPIキー無しでloopをgreenに保つ test double
+- ビルドループ: scripts/dev-loop.sh（claude -p で1タスクをgate greenまで反復、closed loop, MAX_ITERS=8）
 
 ## 確定した方針（2026-06-15）
 - 汎用・マルチテナント・設定駆動で最初から作る（特定サービスへのハードコード禁止）
