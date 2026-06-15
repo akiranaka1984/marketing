@@ -2,10 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 import { runClosedLoop, type CreativeCandidate } from "./closed-loop";
 import { MetaAdapter } from "../channel/meta-adapter";
 import type { ChannelAdapter } from "../channel/channel-adapter";
-import type { ServiceProfile } from "../profile/service-profile";
+import { parseServiceProfile, type ServiceProfile } from "../profile/service-profile";
+import { signProfile } from "../profile/verification";
 
+const KEY = Buffer.alloc(32, 7);
+
+/** A checker-verified, HMAC-signed profile — the only kind the loop will run on. */
 function profile(over: Partial<ServiceProfile> = {}): ServiceProfile {
-  return {
+  const base = parseServiceProfile({
     serviceId: "b-ticket",
     name: "B-Ticket",
     category: "coupon app",
@@ -21,13 +25,19 @@ function profile(over: Partial<ServiceProfile> = {}): ServiceProfile {
     kpis: { targetCac: 12, monthlyBudget: 60000 },
     constraints: [],
     provenance: {
-      derivedBy: "test",
+      derivedBy: "claude-test",
       confidence: 0.9,
       sources: [],
       generatedAt: "2026-06-15T00:00:00.000Z",
+      verifiedBy: "checker-test",
+      verifiedAt: "2026-06-15T01:00:00.000Z",
     },
     ...over,
-  };
+  });
+  return parseServiceProfile({
+    ...base,
+    provenance: { ...base.provenance, verificationToken: signProfile(base, KEY) },
+  });
 }
 
 const sharp: CreativeCandidate = {
@@ -52,6 +62,7 @@ describe("runClosedLoop", () => {
       channel: "meta",
       candidates: [boring, sharp],
       adapter: new MetaAdapter(),
+      verificationKey: KEY,
       approve,
       dryRun: true,
     });
@@ -73,6 +84,7 @@ describe("runClosedLoop", () => {
       channel: "meta",
       candidates: [boring],
       adapter: new MetaAdapter(),
+      verificationKey: KEY,
       approve,
     });
     expect(result.status).toBe("no-sharp-candidate");
@@ -86,6 +98,7 @@ describe("runClosedLoop", () => {
       channel: "meta",
       candidates: [sharp],
       adapter: new MetaAdapter(),
+      verificationKey: KEY,
       approve: () => false,
     });
     expect(result.status).toBe("rejected-by-human");
@@ -106,6 +119,7 @@ describe("runClosedLoop", () => {
       channel: "meta",
       candidates: [sharp],
       adapter: rejecting,
+      verificationKey: KEY,
       approve: () => true,
     });
     expect(result.status).toBe("rejected-by-platform");
@@ -120,9 +134,47 @@ describe("runClosedLoop", () => {
         channel: "meta",
         candidates: [sharp],
         adapter: new MetaAdapter(),
+        verificationKey: KEY,
         approve: () => true,
       }),
     ).rejects.toThrow(/not enabled/);
+  });
+
+  it("refuses to run on an unverified (maker-only) profile — no spend without a checker", async () => {
+    const unverified = parseServiceProfile({
+      ...profile(),
+      provenance: {
+        derivedBy: "claude-test",
+        confidence: 0.9,
+        sources: [],
+        generatedAt: "2026-06-15T00:00:00.000Z",
+      },
+    });
+    const approve = vi.fn(() => true);
+    await expect(
+      runClosedLoop({
+        profile: unverified,
+        channel: "meta",
+        candidates: [sharp],
+        adapter: new MetaAdapter(),
+        verificationKey: KEY,
+        approve,
+      }),
+    ).rejects.toThrow(/not checker-verified/);
+    expect(approve).not.toHaveBeenCalled();
+  });
+
+  it("refuses a verified profile presented with the wrong key", async () => {
+    await expect(
+      runClosedLoop({
+        profile: profile(),
+        channel: "meta",
+        candidates: [sharp],
+        adapter: new MetaAdapter(),
+        verificationKey: Buffer.alloc(32, 9),
+        approve: () => true,
+      }),
+    ).rejects.toThrow(/not checker-verified/);
   });
 
   it("rejects an adapter built for a different channel", async () => {
@@ -132,6 +184,7 @@ describe("runClosedLoop", () => {
         channel: "sms",
         candidates: [sharp],
         adapter: new MetaAdapter(),
+        verificationKey: KEY,
         approve: () => true,
       }),
     ).rejects.toThrow(/adapter is for/);

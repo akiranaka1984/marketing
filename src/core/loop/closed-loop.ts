@@ -15,7 +15,7 @@ import type {
   ChannelMetrics,
   PublishResult,
 } from "../channel/channel-adapter";
-import type { Channel, ServiceProfile } from "../profile/service-profile";
+import { isUsableProfile, type Channel, type ServiceProfile } from "../profile/service-profile";
 import { scoreCampaign, type CampaignTargets, type DualScore } from "./dual-score";
 
 export interface CreativeCandidate {
@@ -38,6 +38,8 @@ export interface ClosedLoopInput {
   candidates: CreativeCandidate[];
   adapter: ChannelAdapter;
   approve: ApproveFn;
+  /** Server key proving the profile was checker-verified (RULES 第3条). */
+  verificationKey: Buffer;
   targets?: CampaignTargets;
   dryRun?: boolean;
 }
@@ -69,6 +71,10 @@ function targetsFromProfile(profile: ServiceProfile, override?: CampaignTargets)
 export async function runClosedLoop(input: ClosedLoopInput): Promise<ClosedLoopResult> {
   const { profile, channel, candidates, adapter, approve } = input;
 
+  // A maker can never drive real spend: only a checker-verified profile may run (RULES 第3条).
+  if (!isUsableProfile(profile, input.verificationKey)) {
+    throw new Error("profile is not checker-verified (RULES 第3条): refusing to run the loop");
+  }
   if (!profile.channels.includes(channel)) {
     throw new Error(`channel "${channel}" is not enabled in the profile`);
   }
