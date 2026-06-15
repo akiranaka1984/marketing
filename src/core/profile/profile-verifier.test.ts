@@ -71,6 +71,16 @@ describe("ProfileVerifier", () => {
     expect(isUsableProfile(result.profile, KEY)).toBe(false);
   });
 
+  it("treats a sub-floor 'approve' as not approved, so approved implies usable confidence", async () => {
+    const weakApprove = JSON.stringify({ verdict: "approve", confidence: 0.49, reasons: ["borderline"] });
+    const verifier = new ProfileVerifier({ client: new FakeLlmClient(weakApprove), checker: "claude-sonnet-4", key: KEY });
+    const result = await verifier.verify(makerProfile());
+    expect(result.approved).toBe(false);
+    expect(result.profile.provenance.verifiedBy).toBeUndefined();
+    expect(result.profile.provenance.verificationToken).toBeUndefined();
+    expect(isUsableProfile(result.profile, KEY)).toBe(false);
+  });
+
   it("returns the profile unchanged and unusable when the checker rejects", async () => {
     const reject = JSON.stringify({ verdict: "reject", confidence: 0.1, reasons: ["generic filler"] });
     const verifier = new ProfileVerifier({ client: new FakeLlmClient(reject), checker: "claude-sonnet-4", key: KEY });

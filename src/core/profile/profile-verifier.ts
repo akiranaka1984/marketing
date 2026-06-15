@@ -18,7 +18,7 @@
 import { z } from "zod";
 import type { LlmClient } from "./llm-client";
 import { parseJsonObject } from "./llm-json";
-import { parseServiceProfile, type ServiceProfile } from "./service-profile";
+import { MIN_USABLE_CONFIDENCE, parseServiceProfile, type ServiceProfile } from "./service-profile";
 import { signProfile } from "./verification";
 
 const verdictSchema = z.object({
@@ -76,7 +76,10 @@ export class ProfileVerifier {
     const raw = await this.client.complete({ system: SYSTEM, prompt: buildPrompt(profile) });
     const verdict = verdictSchema.parse(parseJsonObject(raw, "verifier"));
 
-    if (verdict.verdict !== "approve") {
+    // An "approve" below the usability floor is no approval at all: signing it would mint a
+    // token that isUsableProfile rejects, so approved:true would not imply usable. Treat a
+    // sub-floor verdict exactly like a reject (strip + no token) to keep the contract honest.
+    if (verdict.verdict !== "approve" || verdict.confidence < MIN_USABLE_CONFIDENCE) {
       // Strip any prior verification so a re-checked, now-rejected profile is never usable.
       return {
         approved: false,
