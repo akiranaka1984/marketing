@@ -1,0 +1,36 @@
+# LOOP MEMORY — run間の引き継ぎ
+
+> ループは会話を忘れる。このファイルは忘れない。各runの最初に読み、最後に更新する。
+
+## 現在のフェーズ
+Phase 1完了 → スタック雛形完了 → 次は #2 ServiceProfile / #4 管理画面
+
+## 技術メモ（重要）
+- Next.js 16.2.9 / React 19.2.4 / pnpm。**Next16は破壊的変更あり**→ Next固有コードは
+  node_modules/next/dist/docs/ を読んでから書く（AGENTS.md 警告）
+- 品質ゲート: `./loop.sh`（= pnpm verify = lint+typecheck+test）。緑=出荷
+- 最初の実コード src/core/doctrine/decision-spine.ts（D1〜D7のデータ化）+ vitest 3件green
+- git init 済み・未コミット（ユーザーの明示指示までコミットしない）
+
+## 完了したこと
+- 2026-06-15: プロジェクト構造作成、VISION/RULES/ROSTER/ARCHITECTURE 草案
+- 設計憲法確定：超尖らせる・平準化はFAIL・巨匠は混ぜず使い分け
+- 汎用知能原則確定：サービス固有のハードコード＝バグ。Profile/WorkflowはAI自動導出
+- ドクトリンエンジン完成：doctrine/ENGINE.md に D1〜D7 の意思決定背骨を蒸留
+- 裁定の既定：対立は競合2案を立て実データで決める（承認済）
+- スタック雛形: Next.js16+vitest+品質ゲート+loop.sh+.env.example、decision-spine実装
+
+## 確定した方針（2026-06-15）
+- 汎用・マルチテナント・設定駆動で最初から作る（特定サービスへのハードコード禁止）
+- API認証情報は管理画面から後入力・DB暗号化保存
+- 最初の検証テナント＝B-Ticket × Meta（アプリ内CVでループがクリーンに閉じる）
+- daimasu はオフラインCV(来店)が難所、エンジン確立後に対応
+- 対象サービス：B-Ticket(クーポンアプリ/PH)、daimasu(日本食レストラン/PH)、今後拡大
+
+## 未決定（一緒に設計する論点）
+- [ ] 最初の検証テナント B-Ticket で合意するか
+- [ ] ドクトリン対立の裁定方式（選ぶ vs 競わせる）
+- [ ] 技術スタック最終承認
+
+## 次の一歩
+Phase 1 プラン提示 → 合意後に着工（コード前にチェックイン）。
