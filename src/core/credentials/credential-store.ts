@@ -22,6 +22,8 @@ export interface CredentialStore {
   get(ref: CredentialRef): Promise<string | null>;
   has(ref: CredentialRef): Promise<boolean>;
   delete(ref: CredentialRef): Promise<void>;
+  /** Stored credential identities (never secrets) — for admin listing. */
+  list(): Promise<CredentialRef[]>;
 }
 
 /**
@@ -58,5 +60,12 @@ export class InMemoryCredentialStore implements CredentialStore {
 
   async delete(ref: CredentialRef): Promise<void> {
     this.rows.delete(refIdentity(ref));
+  }
+
+  async list(): Promise<CredentialRef[]> {
+    return [...this.rows.keys()].map((id) => {
+      const [tenantId, channel, name] = JSON.parse(id) as [string, Channel, string];
+      return { tenantId, channel, name };
+    });
   }
 }

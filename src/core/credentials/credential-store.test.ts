@@ -36,6 +36,20 @@ describe("InMemoryCredentialStore", () => {
     expect(await store.get(ref)).toBeNull();
   });
 
+  it("lists stored identities without exposing secrets", async () => {
+    const store = new InMemoryCredentialStore(key);
+    await store.put(ref, "super-secret-value");
+    await store.put({ ...ref, name: "adAccountId" }, "another-secret");
+    const listed = await store.list();
+    expect(listed).toHaveLength(2);
+    expect(listed).toContainEqual(ref);
+    expect(listed).toContainEqual({ ...ref, name: "adAccountId" });
+    for (const entry of listed) {
+      expect(Object.keys(entry).sort()).toEqual(["channel", "name", "tenantId"]);
+    }
+    expect(JSON.stringify(listed)).not.toContain("secret-value");
+  });
+
   it("binds ciphertext to its ref so swapped blobs cannot be read", async () => {
     const store = new InMemoryCredentialStore(key);
     await store.put(ref, "meta-token");
