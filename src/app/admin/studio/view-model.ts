@@ -4,6 +4,8 @@
  * No service-specific logic: it only reshapes generic engine output.
  */
 
+import type { GeneratedCreative } from "@/core/creative/creative-maker";
+import type { CreativeSelection } from "@/core/creative/creative-selector";
 import type { ArbitrationMode } from "@/core/doctrine/decision-spine";
 import type { DoctrineRouting, RoutedDecision } from "@/core/doctrine/router";
 import type { ServiceProfile } from "@/core/profile/service-profile";
@@ -44,6 +46,50 @@ export interface StudioView {
   /** Decisions NOT collapsed to a single stance — the sharp, contested calls. */
   contestedCount: number;
   decisions: DecisionView[];
+}
+
+/** A sharp creative that survived the BoringFilter (D3) gate. */
+export interface CreativeRowView {
+  headline: string;
+  body: string;
+  audience: string;
+  angle: string;
+  metricHypothesis: string;
+  dailyBudget: number;
+  /** Sharpness 0–100 (higher = sharper). */
+  sharpnessPct: number;
+}
+
+/** A creative the BoringFilter killed, with the reasons it was too boring. */
+export interface RejectedCreativeView {
+  headline: string;
+  reasons: string[];
+}
+
+export interface CreativeSelectionView {
+  passing: CreativeRowView[];
+  rejected: RejectedCreativeView[];
+}
+
+/** Reshape the engine's creative selection into render-ready rows. Pure presenter. */
+export function buildCreativeSelectionView(
+  selection: CreativeSelection<GeneratedCreative>,
+): CreativeSelectionView {
+  return {
+    passing: selection.passing.map(({ creative, sharpness }) => ({
+      headline: creative.headline,
+      body: creative.body,
+      audience: creative.audience,
+      angle: creative.angle,
+      metricHypothesis: creative.metricHypothesis,
+      dailyBudget: creative.dailyBudget,
+      sharpnessPct: Math.round(sharpness * 100),
+    })),
+    rejected: selection.rejected.map(({ creative, reasons }) => ({
+      headline: creative.headline,
+      reasons,
+    })),
+  };
 }
 
 export function buildStudioView(

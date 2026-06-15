@@ -5,7 +5,7 @@ import { Badge } from "@/app/_components/ui/badge";
 import { Card } from "@/app/_components/ui/card";
 import { runStudioAction } from "./actions";
 import { initialStudioState, type StudioState } from "./state";
-import type { StudioView } from "./view-model";
+import type { CreativeSelectionView, StudioView } from "./view-model";
 
 const field =
   "w-full rounded-lg border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-ink " +
@@ -93,13 +93,32 @@ function Results({ state }: { state: StudioState }) {
     );
   }
 
-  return <ProfileResult view={state.view} mode={state.mode} />;
+  return (
+    <ProfileResult
+      view={state.view}
+      mode={state.mode}
+      creatives={state.creatives}
+      creativesError={state.creativesError}
+    />
+  );
 }
 
-function ProfileResult({ view, mode }: { view: StudioView; mode: "mock" | "live" }) {
+function ProfileResult({
+  view,
+  mode,
+  creatives,
+  creativesError,
+}: {
+  view: StudioView;
+  mode: "mock" | "live";
+  creatives: CreativeSelectionView | null;
+  creativesError?: string;
+}) {
   return (
     <div className="space-y-6">
       <ProfileSummary view={view} mode={mode} />
+
+      <CreativeSection creatives={creatives} mode={mode} error={creativesError} />
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
@@ -123,6 +142,91 @@ function ProfileResult({ view, mode }: { view: StudioView; mode: "mock" | "live"
         </div>
       </section>
     </div>
+  );
+}
+
+function CreativeSection({
+  creatives,
+  mode,
+  error,
+}: {
+  creatives: CreativeSelectionView | null;
+  mode: "mock" | "live";
+  error?: string;
+}) {
+  if (error) {
+    return (
+      <section className="rounded-card border border-danger/30 bg-danger-surface p-4 text-sm text-danger">
+        {error}
+      </section>
+    );
+  }
+  if (creatives === null) {
+    return (
+      <section className="rounded-card border border-dashed border-line bg-surface/40 px-6 py-8 text-center">
+        <h3 className="font-display text-sm font-semibold text-ink">尖ったクリエイティブ生成</h3>
+        <p className="mt-1 text-xs text-faint">
+          {mode === "mock"
+            ? "モック推定では生成しません。ねつ造を避けるため、ライブAI（APIキー設定）が必要です。"
+            : "クリエイティブを生成できませんでした。"}
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="font-display text-sm font-semibold text-ink">
+          尖ったクリエイティブ（BoringFilter通過）
+        </h3>
+        <Badge tone="accent">
+          {creatives.passing.length} 通過 / {creatives.rejected.length} ボツ
+        </Badge>
+      </div>
+
+      {creatives.passing.length === 0 ? (
+        <div className="rounded-card border border-danger/30 bg-danger-surface p-4 text-sm text-danger">
+          全候補がBoringFilterでボツ。競合の誰でも書ける凡庸さ。角度を変えて再発火を。
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {creatives.passing.map((c) => (
+            <Card key={c.headline} className="flex flex-col gap-3 p-5">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs text-accent">尖り {c.sharpnessPct}%</span>
+                <span className="font-mono text-xs text-faint">日予算 {c.dailyBudget}</span>
+              </div>
+              <h4 className="font-display text-base font-semibold tracking-tight text-ink">
+                {c.headline}
+              </h4>
+              <p className="text-sm leading-relaxed text-ink">{c.body}</p>
+              <dl className="space-y-1.5 text-xs">
+                <Field term="角度（D3）" value={c.angle} />
+                <Field term="計測仮説（指標）" value={c.metricHypothesis} />
+                <Field term="対象" value={c.audience} />
+              </dl>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {creatives.rejected.length > 0 && (
+        <details className="rounded-card border border-line bg-surface-2/40 px-4 py-3">
+          <summary className="cursor-pointer text-xs font-medium text-subtle">
+            ボツになった {creatives.rejected.length} 件（理由つき）
+          </summary>
+          <ul className="mt-3 space-y-2">
+            {creatives.rejected.map((r) => (
+              <li key={r.headline} className="text-xs">
+                <p className="text-ink">{r.headline}</p>
+                <p className="text-faint">{r.reasons.join(" / ")}</p>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </section>
   );
 }
 

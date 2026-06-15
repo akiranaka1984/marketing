@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import type { GeneratedCreative } from "../../../core/creative/creative-maker";
+import type { CreativeSelection } from "../../../core/creative/creative-selector";
 import { MockProfiler } from "../../../core/profile/mock-profiler";
 import { routeDoctrine } from "../../../core/doctrine/router";
-import { buildStudioView } from "./view-model";
+import { buildCreativeSelectionView, buildStudioView } from "./view-model";
 
 async function viewFor(name: string) {
   const profile = await new MockProfiler().profile({ name });
@@ -52,5 +54,32 @@ describe("buildStudioView", () => {
     const { view } = await viewFor("Acme");
     const nonSelect = view.decisions.filter((d) => d.arbitration !== "select").length;
     expect(view.contestedCount).toBe(nonSelect);
+  });
+});
+
+describe("buildCreativeSelectionView", () => {
+  function creative(over: Partial<GeneratedCreative>): GeneratedCreative {
+    return {
+      headline: "h",
+      body: "b",
+      audience: "a",
+      dailyBudget: 100,
+      angle: "angle",
+      metricHypothesis: "metric",
+      ...over,
+    };
+  }
+
+  it("maps sharpness to a 0–100 percent and carries angle + metric", () => {
+    const selection: CreativeSelection<GeneratedCreative> = {
+      passing: [{ creative: creative({ headline: "sharp" }), sharpness: 0.82 }],
+      rejected: [{ creative: creative({ headline: "boring" }), reasons: ["常套句"] }],
+    };
+    const view = buildCreativeSelectionView(selection);
+    expect(view.passing[0].sharpnessPct).toBe(82);
+    expect(view.passing[0].angle).toBe("angle");
+    expect(view.passing[0].metricHypothesis).toBe("metric");
+    expect(view.rejected[0].headline).toBe("boring");
+    expect(view.rejected[0].reasons).toEqual(["常套句"]);
   });
 });
