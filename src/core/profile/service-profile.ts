@@ -34,6 +34,19 @@ export type Channel = z.infer<typeof channelSchema>;
 export const businessModelSchema = z.enum(["b2c", "b2b", "b2b2c", "marketplace"]);
 export type BusinessModel = z.infer<typeof businessModelSchema>;
 
+/**
+ * Constraint categories. Only "risk"/"budget" tighten doctrine arbitration
+ * (ENGINE.md: 予算・リスク制約が厳しい時のみ 1案に絞る); legal/brand/ops/other do not.
+ */
+export const constraintKindSchema = z.enum(["risk", "budget", "legal", "brand", "ops", "other"]);
+export type ConstraintKind = z.infer<typeof constraintKindSchema>;
+
+export const constraintSchema = z.object({
+  kind: constraintKindSchema,
+  note: z.string().trim().min(1),
+});
+export type Constraint = z.infer<typeof constraintSchema>;
+
 export const serviceProfileSchema = z.object({
   serviceId: nonEmptyText,
   name: nonEmptyText,
@@ -81,7 +94,7 @@ export const serviceProfileSchema = z.object({
     monthlyBudget: z.number().nonnegative().optional(),
   }),
 
-  constraints: z.array(z.string()),
+  constraints: z.array(constraintSchema),
 
   // Provenance — every profile is AI-derived; we keep confidence + sources so the
   // loop can decide when to re-research or escalate to a human.

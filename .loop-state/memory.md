@@ -3,8 +3,8 @@
 > ループは会話を忘れる。このファイルは忘れない。各runの最初に読み、最後に更新する。
 
 ## 現在のフェーズ
-Phase 1完了 → スタック雛形完了 → #2 ServiceProfile スキーマ＋Profiler port＋MockProfiler完了
-→ 次は #2 実AI Profiler(Agent SDK, APIキー後) / #5 DoctrineRouter+BoringFilter / #4 管理画面
+Phase 1完了 → スタック雛形 → #2 ServiceProfile土台 → #5 DoctrineRouter v1 + BoringFilter完了
+→ 次は #6 Meta ChannelAdapter+Closed Loop / #4 管理画面 / #2 実AI Profiler(Agent SDK, APIキー後)
 
 ## 技術メモ（重要）
 - Next.js 16.2.9 / React 19.2.4 / pnpm。**Next16は破壊的変更あり**→ Next固有コードは
@@ -25,6 +25,13 @@ Phase 1完了 → スタック雛形完了 → #2 ServiceProfile スキーマ＋
 - ServiceProfileは汎用構造（category/JTBD/market/audience/channels/conversion.isOnline/provenance）
   ＝AIが後でAgent SDKで自動生成。MockProfilerはAPIキー無しでloopをgreenに保つ test double
 - ビルドループ: scripts/dev-loop.sh（claude -p で1タスクをgate greenまで反復、closed loop, MAX_ITERS=8）
+- DoctrineRouter v1: src/core/doctrine/router.ts。ServiceProfile→D1〜D7の発火＆裁定。
+  不変条件: D6は常にdual-score、対立のselect縮約は risk/budget制約時のみ（constraintsを型付け）
+- BoringFilter v1: src/core/doctrine/boring-filter.ts（D3ゲート=checker, maker≠checker）。
+  常套句＋曖昧語(everyone/amazing/誰でも等)を却下、score 0..1。実意味判定は後でAIに委譲
+- ServiceProfile.constraints を型付け: {kind: risk|budget|legal|brand|ops|other, note}
+- gate全green(42件)。Codex(gpt-5.5)レビューでHIGH2件指摘→両方修正→LGTM確認済
+- Codex注意: ChatGPTアカウントは gpt-5/gpt-5-codex不可。--model gpt-5.5 を使う
 
 ## 確定した方針（2026-06-15）
 - 汎用・マルチテナント・設定駆動で最初から作る（特定サービスへのハードコード禁止）

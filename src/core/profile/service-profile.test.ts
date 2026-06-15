@@ -21,7 +21,7 @@ function validProfile() {
     brandAssets: { colors: ["#ff0000"], tone: "playful", taglines: ["Tara, save!"] },
     conversion: { primaryEvent: "coupon_redeem", isOnline: true },
     kpis: { targetCac: 1.5, monthlyBudget: 50000 },
-    constraints: ["no alcohol promos"],
+    constraints: [{ kind: "legal", note: "no alcohol promos" }],
     provenance: {
       derivedBy: "mock",
       confidence: 0.4,
