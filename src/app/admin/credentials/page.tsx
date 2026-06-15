@@ -1,5 +1,7 @@
 import type { CredentialRef } from "@/core/credentials/credential-store";
+import { requireAdmin } from "@/app/lib/auth";
 import { deleteCredentialAction } from "./actions";
+import { logoutAction } from "./auth-actions";
 import { CredentialForm } from "./credential-form";
 import { getCredentialService } from "./service";
 
@@ -10,6 +12,8 @@ export const metadata = {
 };
 
 export default async function CredentialsPage() {
+  const session = await requireAdmin();
+
   let stored: CredentialRef[] = [];
   let configError: string | null = null;
   try {
@@ -21,7 +25,15 @@ export default async function CredentialsPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-12 space-y-10">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">チャネル認証情報</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">チャネル認証情報</h1>
+          <form action={logoutAction} className="flex items-center gap-3">
+            <span className="text-xs text-black/50">{session.sub}</span>
+            <button type="submit" className="text-xs text-black/60 hover:underline">
+              ログアウト
+            </button>
+          </form>
+        </div>
         <p className="text-sm text-black/60">
           API認証情報はコードや.envに置かず、ここから入力して暗号化（AES-256-GCM）して保存します。
         </p>

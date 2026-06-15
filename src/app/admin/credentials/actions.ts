@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
+import { requireAdmin } from "@/app/lib/auth";
 import { FormFieldError, requireString } from "./form-data";
 import { getCredentialService } from "./service";
 
@@ -20,6 +21,7 @@ export async function saveCredentialAction(
   _prev: SaveState,
   formData: FormData,
 ): Promise<SaveState> {
+  await requireAdmin();
   try {
     await getCredentialService().set({
       tenantId: requireString(formData, "tenantId"),
@@ -38,6 +40,7 @@ export async function saveCredentialAction(
 }
 
 export async function deleteCredentialAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   try {
     await getCredentialService().remove({
       tenantId: requireString(formData, "tenantId"),
